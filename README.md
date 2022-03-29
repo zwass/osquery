@@ -21,6 +21,7 @@ Available for Linux, macOS, Windows, and FreeBSD.
 - Query Packs: [osquery.io/packs](https://github.com/osquery/osquery/tree/master/packs)
 - Slack: [Request an auto-invite!](https://join.slack.com/t/osquery/shared_invite/zt-h29zm0gk-s2DBtGUTW4CFel0f0IjTEw)
 - Build Status: [![GitHub Actions Build Status](https://github.com/osquery/osquery/workflows/build/badge.svg)](https://github.com/osquery/osquery/actions?query=workflow%3Abuild+branch%3Amaster) [![Coverity Scan Build Status](https://scan.coverity.com/projects/13317/badge.svg)](https://scan.coverity.com/projects/osquery) [![Documentation Status](https://readthedocs.org/projects/osquery/badge/?version=latest)](https://osquery.readthedocs.io/en/latest/?badge=latest)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fzwass%2Fosquery.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fzwass%2Fosquery?ref=badge_shield)
 - CII Best Practices: [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3125/badge)](https://bestpractices.coreinfrastructure.org/projects/3125)
 
 ## What is osquery?
@@ -115,6 +116,9 @@ community on [Slack](https://join.slack.com/t/osquery/shared_invite/zt-h29zm0gk-
 
 By contributing to osquery you agree that your contributions will be
 licensed as defined on the LICENSE file.
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fzwass%2Fosquery.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fzwass%2Fosquery?ref=badge_large)
 
 ## Vulnerabilities
 
