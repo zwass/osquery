@@ -304,6 +304,7 @@ function(generateNativeTables)
     "windows/windows_firewall_rules.table:windows"
     "windows/userassist.table:windows"
     "windows/dns_cache.table:windows"
+    "windows/dns_resolvers.table:windows"
     "windows/deviceguard_status.table:windows"
     "windows/shimcache.table:windows"
     "windows/shellbags.table:windows"

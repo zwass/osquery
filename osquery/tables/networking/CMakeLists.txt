@@ -56,6 +56,7 @@ function(generateOsqueryTablesNetworking)
     list(APPEND source_files
       windows/arp_cache.cpp
       windows/connectivity.cpp
+      windows/dns_resolvers.cpp
       windows/windows_firewall_rules.cpp
       windows/interfaces.cpp
       windows/process_open_sockets.cpp
