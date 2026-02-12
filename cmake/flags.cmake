@@ -55,7 +55,7 @@ function(setupBuildFlags)
       -Wno-zero-length-array
       -Wno-unused-parameter
       -Wno-gnu-case-range
-      -Wno-enum-constexpr-conversion
+      -Wno-enum-constexpr-conversion # TODO remove this after boost upgrade
       -fpermissive
       -fstack-protector-all
       -fdata-sections
