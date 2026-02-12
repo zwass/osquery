@@ -55,6 +55,7 @@ function(setupBuildFlags)
       -Wno-zero-length-array
       -Wno-unused-parameter
       -Wno-gnu-case-range
+      -Wno-enum-constexpr-conversion
       -fpermissive
       -fstack-protector-all
       -fdata-sections
