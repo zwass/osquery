@@ -13,9 +13,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-
 #include <osquery/filesystem/filesystem.h>
 #include <osquery/hashing/hashing.h>
 #include <osquery/logger/logger.h>
@@ -25,10 +22,16 @@
 
 namespace osquery {
 
-Hash::~Hash() {
-  if (ctx_ != nullptr) {
-    free(ctx_);
-  }
+Hash::Hash(Hash&& other) noexcept
+    : algorithm_(other.algorithm_),
+      encoding_(other.encoding_),
+      ctx_(std::move(other.ctx_)) {}
+
+Hash& Hash::operator=(Hash&& other) noexcept {
+  algorithm_ = other.algorithm_;
+  encoding_ = other.encoding_;
+  ctx_ = std::move(other.ctx_);
+  return *this;
 }
 
 Hash::Hash(HashType algorithm)
@@ -37,69 +40,53 @@ Hash::Hash(HashType algorithm)
 Hash::Hash(HashType algorithm, HashEncodingType encoding)
     : algorithm_(algorithm), encoding_(encoding) {
   if (algorithm_ == HASH_TYPE_MD5) {
-    length_ = MD5_DIGEST_LENGTH;
-    ctx_ = static_cast<MD5_CTX*>(malloc(sizeof(MD5_CTX)));
-    MD5_Init(static_cast<MD5_CTX*>(ctx_));
+    ctx_ = MD5_CTX{};
+    MD5_Init(&std::get<MD5_CTX>(ctx_));
   } else if (algorithm_ == HASH_TYPE_SHA1) {
-    length_ = SHA_DIGEST_LENGTH;
-    ctx_ = static_cast<SHA_CTX*>(malloc(sizeof(SHA_CTX)));
-    SHA1_Init(static_cast<SHA_CTX*>(ctx_));
+    ctx_ = SHA_CTX{};
+    SHA1_Init(&std::get<SHA_CTX>(ctx_));
   } else if (algorithm_ == HASH_TYPE_SHA256) {
-    length_ = SHA256_DIGEST_LENGTH;
-    ctx_ = static_cast<SHA256_CTX*>(malloc(sizeof(SHA256_CTX)));
-    SHA256_Init(static_cast<SHA256_CTX*>(ctx_));
+    ctx_ = SHA256_CTX{};
+    SHA256_Init(&std::get<SHA256_CTX>(ctx_));
   } else {
     throw std::domain_error("Unknown hash function");
   }
 }
 
-Hash::Hash(Hash&& other) noexcept
-    : algorithm_(other.algorithm_),
-      encoding_(other.encoding_),
-      ctx_(std::exchange(other.ctx_, nullptr)),
-      length_(other.length_) {}
-
-Hash& Hash::operator=(Hash&& other) noexcept {
-  algorithm_ = other.algorithm_;
-  encoding_ = other.encoding_;
-  ctx_ = std::exchange(other.ctx_, nullptr);
-  length_ = other.length_;
-
-  return *this;
-}
-
 void Hash::update(const void* buffer, size_t size) {
-  if (algorithm_ == HASH_TYPE_MD5) {
-    MD5_Update(static_cast<MD5_CTX*>(ctx_), buffer, size);
-  } else if (algorithm_ == HASH_TYPE_SHA1) {
-    SHA1_Update(static_cast<SHA_CTX*>(ctx_), buffer, size);
-  } else if (algorithm_ == HASH_TYPE_SHA256) {
-    SHA256_Update(static_cast<SHA256_CTX*>(ctx_), buffer, size);
+  if (auto* ctx = std::get_if<MD5_CTX>(&ctx_)) {
+    MD5_Update(ctx, buffer, size);
+  } else if (auto* ctx = std::get_if<SHA_CTX>(&ctx_)) {
+    SHA1_Update(ctx, buffer, size);
+  } else if (auto* ctx = std::get_if<SHA256_CTX>(&ctx_)) {
+    SHA256_Update(ctx, buffer, size);
   }
 }
 
 std::string Hash::digest() {
   std::vector<unsigned char> hash;
-  hash.assign(length_, '\0');
 
-  if (algorithm_ == HASH_TYPE_MD5) {
-    MD5_Final(hash.data(), static_cast<MD5_CTX*>(ctx_));
-  } else if (algorithm_ == HASH_TYPE_SHA1) {
-    SHA1_Final(hash.data(), static_cast<SHA_CTX*>(ctx_));
-  } else if (algorithm_ == HASH_TYPE_SHA256) {
-    SHA256_Final(hash.data(), static_cast<SHA256_CTX*>(ctx_));
+  if (auto* ctx = std::get_if<MD5_CTX>(&ctx_)) {
+    hash.assign(MD5_DIGEST_LENGTH, '\0');
+    MD5_Final(hash.data(), ctx);
+  } else if (auto* ctx = std::get_if<SHA_CTX>(&ctx_)) {
+    hash.assign(SHA_DIGEST_LENGTH, '\0');
+    SHA1_Final(hash.data(), ctx);
+  } else if (auto* ctx = std::get_if<SHA256_CTX>(&ctx_)) {
+    hash.assign(SHA256_DIGEST_LENGTH, '\0');
+    SHA256_Final(hash.data(), ctx);
   }
 
   if (encoding_ == HASH_ENCODING_TYPE_HEX) {
     std::stringstream digest;
-    for (size_t i = 0; i < length_; i++) {
-      digest << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    for (auto byte : hash) {
+      digest << std::hex << std::setw(2) << std::setfill('0') << (int)byte;
     }
     return digest.str();
   } else if (encoding_ == HASH_ENCODING_TYPE_BASE64) {
     std::stringstream digest;
-    for (size_t i = 0; i < length_; i++) {
-      digest << hash[i];
+    for (auto byte : hash) {
+      digest << byte;
     }
     return base64::encode(digest.str());
   }

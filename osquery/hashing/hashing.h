@@ -10,6 +10,10 @@
 #pragma once
 
 #include <string>
+#include <variant>
+
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 
 #include <boost/noncopyable.hpp>
 
@@ -85,7 +89,7 @@ class Hash : boost::noncopyable {
   /**
    * @brief Hash destructor
    */
-  ~Hash();
+  ~Hash() = default;
 
   /**
    * @brief Update the internal context buffer with additional content
@@ -122,10 +126,7 @@ class Hash : boost::noncopyable {
 
   /// The buffer used to maintain the context and state of the hashing
   /// operations
-  void* ctx_;
-
-  /// The length of the hash to be returned
-  size_t length_;
+  std::variant<MD5_CTX, SHA_CTX, SHA256_CTX> ctx_;
 };
 
 /**
