@@ -65,6 +65,9 @@ void parseShellData(const std::string& shell_data,
     extension_sig = "2500EFBE";
   }
 
+  if (shell_data.length() < 6) {
+    return;
+  }
   std::string sig = shell_data.substr(4, 2);
   ShellFileEntryData file_entry;
   if (shell_data.length() > 200 && extension_sig == "" &&
@@ -78,6 +81,9 @@ void parseShellData(const std::string& shell_data,
     return;
   } else if (sig == "1F" &&
              shell_data.find("31535053") == std::string::npos) { // Root Folder
+    if (shell_data.length() < 10) {
+      return;
+    }
     std::string name;
     std::string full_path;
     if (shell_data.substr(8, 2) == "2F") { // User Property View Drive
@@ -107,6 +113,9 @@ void parseShellData(const std::string& shell_data,
     if (shell_data.substr(6, 2) == "80" &&
         (extension_sig == "2600EFBE" || extension_sig == "2500EFBE" ||
          extension_sig == "")) { // Check if GUID exists
+      if (shell_data.length() < 40) {
+        return;
+      }
       std::string guid_little = shell_data.substr(8, 32);
       std::string guid_string = guidParse(guid_little);
       std::string guid_name = guidLookup(guid_string);
@@ -189,8 +198,9 @@ void parseShellData(const std::string& shell_data,
       r["path"] = full_path;
       results.push_back(r);
       return;
-    } else if (shell_data.substr(12, 8) == "05000000" ||
-               shell_data.substr(12, 8) == "05000300") {
+    } else if (shell_data.length() >= 20 &&
+               (shell_data.substr(12, 8) == "05000000" ||
+                shell_data.substr(12, 8) == "05000300")) {
       std::string ftp_name = variableFtp(shell_data);
       build_shellbag.push_back(ftp_name);
       std::string full_path = osquery::join(build_shellbag, "\\");
@@ -250,6 +260,9 @@ void parseShellData(const std::string& shell_data,
     if (shell_data.find("31535053") != std::string::npos) {
       if (shell_data.find("D5DFA323") !=
           std::string::npos) { // User Property View
+        if (shell_data.length() < 258) {
+          return;
+        }
         std::string property_guid = shell_data.substr(226, 32);
         std::string guid_string = guidParse(property_guid);
 
