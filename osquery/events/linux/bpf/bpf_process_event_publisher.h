@@ -21,6 +21,14 @@ struct ring_buffer;
 
 namespace osquery {
 
+constexpr std::uint32_t kProcessEventProbeErrCwdFs = 0x00000001U;
+constexpr std::uint32_t kProcessEventProbeErrCwdDentry = 0x00000002U;
+constexpr std::uint32_t kProcessEventProbeErrPathRead = 0x00000004U;
+constexpr std::uint32_t kProcessEventProbeErrArgvPtrRead = 0x00000008U;
+constexpr std::uint32_t kProcessEventProbeErrArgvStrRead = 0x00000010U;
+constexpr std::uint32_t kProcessEventProbeErrMmRead = 0x00000020U;
+constexpr std::uint32_t kProcessEventProbeErrMmArgRange = 0x00000040U;
+
 struct BPFProcessEvent {
   uint64_t timestamp;
   uint64_t pid;
@@ -32,6 +40,7 @@ struct BPFProcessEvent {
   int64_t exit_code;
   uint64_t duration;
   uint8_t probe_error;
+  uint32_t probe_error_mask;
 
   std::string comm;
   std::string path;

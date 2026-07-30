@@ -26,8 +26,11 @@ class BPFProcessEventSubscriber
       const BPFProcessEventList& event_list);
 
  private:
+    static std::string generatePathColumn(const BPFProcessEvent& event);
   static std::string generateCmdlineColumn(const std::string& args);
   static std::string generateJsonCmdlineColumn(const std::string& args);
+    static std::string generateProbeErrorReasonColumn(
+            std::uint8_t probe_error, std::uint32_t probe_error_mask);
 };
 
 } // namespace osquery

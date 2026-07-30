@@ -20,6 +20,25 @@
 
 namespace osquery {
 
+namespace {
+
+struct ProbeErrorReason {
+  std::uint32_t bit;
+  const char* label;
+};
+
+const ProbeErrorReason kProbeErrorReasons[] = {
+  {kProcessEventProbeErrCwdFs, "cwd_fs_read"},
+  {kProcessEventProbeErrCwdDentry, "cwd_dentry_read"},
+  {kProcessEventProbeErrPathRead, "path_read"},
+  {kProcessEventProbeErrArgvPtrRead, "argv_pointer_read"},
+  {kProcessEventProbeErrArgvStrRead, "argv_string_read"},
+  {kProcessEventProbeErrMmRead, "mm_read"},
+  {kProcessEventProbeErrMmArgRange, "mm_arg_range_read"},
+};
+
+} // namespace
+
 REGISTER(BPFProcessEventSubscriber, "event_subscriber", "bpf_process_events");
 
 Status BPFProcessEventSubscriber::init() {
@@ -47,6 +66,19 @@ bool BPFProcessEventSubscriber::generateRow(Row& row,
     return false;
   }
 
+  auto path = generatePathColumn(event);
+
+  auto probe_error_mask = event.probe_error_mask;
+  if (event.path.empty() && !path.empty() &&
+      (probe_error_mask & kProcessEventProbeErrPathRead) != 0U) {
+    probe_error_mask &= ~kProcessEventProbeErrPathRead;
+  }
+
+  auto probe_error = static_cast<std::uint8_t>(event.probe_error);
+  if (probe_error_mask == 0U) {
+    probe_error = 0;
+  }
+
   row["ntime"] = SQL_TEXT(event.timestamp);
   row["tid"] = INTEGER(event.tid);
   row["pid"] = INTEGER(event.pid);
@@ -55,9 +87,12 @@ bool BPFProcessEventSubscriber::generateRow(Row& row,
   row["gid"] = INTEGER(event.gid);
   row["cid"] = INTEGER(event.cgroup_id);
   row["exit_code"] = SQL_TEXT(std::to_string(event.exit_code));
-  row["probe_error"] = INTEGER(event.probe_error);
+  row["probe_error"] = INTEGER(probe_error);
+  row["probe_error_mask"] = INTEGER(probe_error_mask);
+  row["probe_error_reason"] =
+      SQL_TEXT(generateProbeErrorReasonColumn(probe_error, probe_error_mask));
   row["syscall"] = SQL_TEXT("execve");
-  row["path"] = SQL_TEXT(event.path);
+  row["path"] = SQL_TEXT(path);
   row["cwd"] = SQL_TEXT(event.cwd);
   row["duration"] = INTEGER(event.duration);
 
@@ -80,6 +115,32 @@ std::vector<Row> BPFProcessEventSubscriber::generateRowList(
   }
 
   return row_list;
+}
+
+std::string BPFProcessEventSubscriber::generatePathColumn(
+    const BPFProcessEvent& event) {
+  if (!event.path.empty()) {
+    return event.path;
+  }
+
+  // If the syscall filename probe failed, fallback to argv[0] so path remains
+  // useful for analysts.
+  if ((event.probe_error_mask & kProcessEventProbeErrPathRead) == 0U) {
+    return "";
+  }
+
+  auto args = event.args;
+  boost::trim_left(args);
+  if (args.empty()) {
+    return "";
+  }
+
+  auto first_space = args.find(' ');
+  if (first_space == std::string::npos) {
+    return args;
+  }
+
+  return args.substr(0U, first_space);
 }
 
 std::string BPFProcessEventSubscriber::generateCmdlineColumn(
@@ -120,6 +181,33 @@ std::string BPFProcessEventSubscriber::generateJsonCmdlineColumn(
   doc.Accept(writer);
 
   return buffer.GetString();
+}
+
+std::string BPFProcessEventSubscriber::generateProbeErrorReasonColumn(
+    std::uint8_t probe_error, std::uint32_t probe_error_mask) {
+  if (probe_error == 0 || probe_error_mask == 0) {
+    return "";
+  }
+
+  std::string reason;
+  for (const auto& probe_error_reason : kProbeErrorReasons) {
+    if ((probe_error_mask & probe_error_reason.bit) == 0U) {
+      continue;
+    }
+
+    if (!reason.empty()) {
+      reason += ',';
+    }
+
+    reason += probe_error_reason.label;
+  }
+
+  // Preserve visibility when an unknown bit is set by newer BPF code.
+  if (reason.empty()) {
+    reason = "unknown";
+  }
+
+  return reason;
 }
 
 } // namespace osquery

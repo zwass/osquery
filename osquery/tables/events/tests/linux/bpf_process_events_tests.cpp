@@ -28,6 +28,7 @@ TEST_F(BPFProcessEventsTests, test_event_row_generation) {
   event.exit_code = 0;
   event.duration = 5000;
   event.probe_error = 0;
+  event.probe_error_mask = 0;
   event.comm = "test_cmd";
   event.path = "/bin/test_cmd";
   event.cwd = "/home/user";
@@ -45,6 +46,8 @@ TEST_F(BPFProcessEventsTests, test_event_row_generation) {
   EXPECT_EQ(row["cid"], "42");
   EXPECT_EQ(row["exit_code"], "0");
   EXPECT_EQ(row["probe_error"], "0");
+  EXPECT_EQ(row["probe_error_mask"], "0");
+  EXPECT_EQ(row["probe_error_reason"], "");
   EXPECT_EQ(row["syscall"], "execve");
   EXPECT_EQ(row["path"], "/bin/test_cmd");
   EXPECT_EQ(row["cwd"], "/home/user");
@@ -75,6 +78,46 @@ TEST_F(BPFProcessEventsTests, test_json_cmdline_complex) {
 
   EXPECT_EQ(row["cmdline"], "ls -la /home/user");
   EXPECT_EQ(row["json_cmdline"], "[\"ls\",\"-la\",\"/home/user\"]");
+}
+
+TEST_F(BPFProcessEventsTests, test_probe_error_reason_generation) {
+  BPFProcessEvent event = {};
+  event.timestamp = 1;
+  event.pid = 1;
+  event.exit_code = 0;
+  event.probe_error = 1;
+  event.probe_error_mask =
+      kProcessEventProbeErrPathRead | kProcessEventProbeErrArgvPtrRead;
+
+  Row row;
+  bool status = BPFProcessEventSubscriber::generateRow(row, event);
+  ASSERT_TRUE(status);
+
+  EXPECT_EQ(row["probe_error"], "1");
+  EXPECT_EQ(row["probe_error_mask"],
+            std::to_string(kProcessEventProbeErrPathRead |
+                           kProcessEventProbeErrArgvPtrRead));
+  EXPECT_EQ(row["probe_error_reason"], "path_read,argv_pointer_read");
+}
+
+TEST_F(BPFProcessEventsTests, test_path_read_fallback_to_argv0) {
+  BPFProcessEvent event = {};
+  event.timestamp = 1;
+  event.pid = 1;
+  event.exit_code = 0;
+  event.probe_error = 1;
+  event.probe_error_mask = kProcessEventProbeErrPathRead;
+  event.path = "";
+  event.args = "man echo";
+
+  Row row;
+  bool status = BPFProcessEventSubscriber::generateRow(row, event);
+  ASSERT_TRUE(status);
+
+  EXPECT_EQ(row["path"], "man");
+  EXPECT_EQ(row["probe_error"], "0");
+  EXPECT_EQ(row["probe_error_mask"], "0");
+  EXPECT_EQ(row["probe_error_reason"], "");
 }
 
 } // namespace osquery

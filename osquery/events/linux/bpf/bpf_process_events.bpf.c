@@ -19,6 +19,12 @@
 // never exceeds the end of the args[] buffer.
 #define MAX_SINGLE_ARG_LEN 64
 
+static __always_inline void set_probe_error(struct process_event* event,
+                                            __u32 reason_mask) {
+  event->probe_error = 1;
+  event->probe_error_mask |= reason_mask;
+}
+
 // -----------------------------------------------------------------------
 // BPF helper function declarations
 // -----------------------------------------------------------------------
@@ -142,9 +148,16 @@ struct fs_struct {
   struct path pwd;
 } __attribute__((preserve_access_index));
 
+struct file;
+
 struct mm_struct {
   unsigned long arg_start;
   unsigned long arg_end;
+  struct file* exe_file;
+} __attribute__((preserve_access_index));
+
+struct file {
+  struct path f_path;
 } __attribute__((preserve_access_index));
 
 struct task_struct {
@@ -204,7 +217,7 @@ static __attribute__((noinline)) void fill_cwd(struct process_event* event,
 
   struct fs_struct* fs;
   if (bpf_probe_read_kernel(&fs, sizeof(fs), &task->fs) < 0 || !fs) {
-    event->probe_error = 1;
+    set_probe_error(event, PROCESS_EVENT_PROBE_ERR_CWD_FS);
     return;
   }
 
@@ -213,7 +226,7 @@ static __attribute__((noinline)) void fill_cwd(struct process_event* event,
   if (bpf_probe_read_kernel(&dentry, sizeof(dentry), &fs->pwd.dentry) < 0 ||
       bpf_probe_read_kernel(&mnt, sizeof(mnt), &fs->pwd.mnt) < 0 ||
       !dentry || !mnt) {
-    event->probe_error = 1;
+    set_probe_error(event, PROCESS_EVENT_PROBE_ERR_CWD_DENTRY);
     return;
   }
 
@@ -307,11 +320,12 @@ static __attribute__((noinline)) void fill_cwd(struct process_event* event,
 // This avoids races with short-lived processes that may exit before userspace
 // can recover /proc/<pid>/cmdline.
 // -----------------------------------------------------------------------
-static __attribute__((noinline)) void fill_args_from_mm(struct process_event* event,
-                                                        struct task_struct* task) {
+static __attribute__((noinline)) int fill_args_from_mm(struct process_event* event,
+                                                       struct task_struct* task) {
   struct mm_struct* mm = 0;
   if (bpf_probe_read_kernel(&mm, sizeof(mm), &task->mm) < 0 || !mm) {
-    return;
+    set_probe_error(event, PROCESS_EVENT_PROBE_ERR_MM_READ);
+    return 0;
   }
 
   unsigned long arg_start = 0;
@@ -319,7 +333,8 @@ static __attribute__((noinline)) void fill_args_from_mm(struct process_event* ev
   if (bpf_probe_read_kernel(&arg_start, sizeof(arg_start), &mm->arg_start) < 0 ||
       bpf_probe_read_kernel(&arg_end, sizeof(arg_end), &mm->arg_end) < 0 ||
       arg_end <= arg_start) {
-    return;
+    set_probe_error(event, PROCESS_EVENT_PROBE_ERR_MM_ARG_RANGE);
+    return 0;
   }
 
   __u64 total_len = 0;
@@ -354,7 +369,101 @@ static __attribute__((noinline)) void fill_args_from_mm(struct process_event* ev
 
   if (total_len > 0 && total_len <= MAX_ARGS_LEN) {
     event->args[total_len - 1] = '\0';
+    return 1;
   }
+
+  return 0;
+}
+
+// -----------------------------------------------------------------------
+// Executable path recovery helper (sys_exit fallback)
+//
+// Reads task->mm->exe_file->f_path and reconstructs an absolute-ish path
+// within the current mount using dentry walking, similar to CWD recovery.
+// -----------------------------------------------------------------------
+static __attribute__((noinline)) int fill_path_from_mm_exe_file(
+    struct process_event* event, struct task_struct* task) {
+  struct mm_struct* mm = 0;
+  if (bpf_probe_read_kernel(&mm, sizeof(mm), &task->mm) < 0 || !mm) {
+    return 0;
+  }
+
+  struct file* exe_file = 0;
+  if (bpf_probe_read_kernel(&exe_file, sizeof(exe_file), &mm->exe_file) < 0 ||
+      !exe_file) {
+    return 0;
+  }
+
+  struct dentry* dentry = 0;
+  struct vfsmount* mnt = 0;
+  if (bpf_probe_read_kernel(&dentry, sizeof(dentry), &exe_file->f_path.dentry) <
+          0 ||
+      bpf_probe_read_kernel(&mnt, sizeof(mnt), &exe_file->f_path.mnt) < 0 ||
+      !dentry || !mnt) {
+    return 0;
+  }
+
+  struct dentry* mnt_root = 0;
+  bpf_probe_read_kernel(&mnt_root, sizeof(mnt_root), &mnt->mnt_root);
+
+  char names[MAX_CWD_DEPTH][MAX_CWD_COMPONENT];
+  int count = 0;
+
+#pragma unroll
+  for (int i = 0; i < MAX_CWD_DEPTH; i++) {
+    if (!dentry)
+      break;
+
+    struct dentry* parent = 0;
+    if (bpf_probe_read_kernel(&parent, sizeof(parent), &dentry->d_parent) < 0)
+      break;
+
+    if (parent == dentry || dentry == mnt_root)
+      break;
+
+    const unsigned char* name_ptr = 0;
+    if (bpf_probe_read_kernel(
+            &name_ptr, sizeof(name_ptr), &dentry->d_name.name) < 0)
+      break;
+
+    long n = bpf_probe_read_kernel_str(
+        &names[count][0], MAX_CWD_COMPONENT, name_ptr);
+    if (n <= 0)
+      break;
+
+    count++;
+    dentry = parent;
+  }
+
+  __u64 pos = 0;
+  event->path[pos++] = '/';
+
+#pragma unroll
+  for (int i = MAX_CWD_DEPTH - 1; i >= 0; i--) {
+    if (i >= count)
+      continue;
+
+    if (pos >= MAX_PATH_LEN - MAX_CWD_COMPONENT)
+      break;
+
+    long len = bpf_probe_read_kernel_str(
+        event->path + pos, MAX_CWD_COMPONENT, names[i]);
+    if (len <= 0 || len > MAX_CWD_COMPONENT)
+      break;
+
+    pos += (unsigned long)(len - 1);
+
+    if (i > 0 && pos < MAX_PATH_LEN - 1) {
+      event->path[pos++] = '/';
+    }
+  }
+
+  if (pos < MAX_PATH_LEN) {
+    event->path[pos] = '\0';
+  }
+
+  // Success if we recovered something beyond just '/'.
+  return (event->path[0] == '/' && event->path[1] != '\0');
 }
 
 // -----------------------------------------------------------------------
@@ -408,6 +517,7 @@ int handle_execve_enter(struct syscall_enter_execve_args* ctx) {
   event->exit_code = 0;
   event->duration = 0;
   event->probe_error = 0;
+  event->probe_error_mask = 0;
 
   // Read command name from the task struct.
   bpf_get_current_comm(&event->comm, sizeof(event->comm));
@@ -415,7 +525,7 @@ int handle_execve_enter(struct syscall_enter_execve_args* ctx) {
   // Read binary path from userspace.
   if (bpf_probe_read_user_str(event->path, sizeof(event->path),
                                ctx->filename) < 0) {
-    event->probe_error = 1;
+    set_probe_error(event, PROCESS_EVENT_PROBE_ERR_PATH_READ);
   }
 
   // Read command line arguments.
@@ -442,7 +552,7 @@ int handle_execve_enter(struct syscall_enter_execve_args* ctx) {
     // fragile in BPF programs depending on kernel/clang combinations.
     __u64 arg_ptr_addr = (__u64)argv + ((__u64)i * sizeof(arg));
     if (bpf_probe_read_user(&arg, sizeof(arg), (const void*)arg_ptr_addr) < 0) {
-      event->probe_error = 1;
+      set_probe_error(event, PROCESS_EVENT_PROBE_ERR_ARGV_PTR_READ);
       break;
     }
 
@@ -460,7 +570,7 @@ int handle_execve_enter(struct syscall_enter_execve_args* ctx) {
     long len = bpf_probe_read_user_str(
         &event->args[total_len], MAX_SINGLE_ARG_LEN, arg);
     if (len <= 0) {
-      event->probe_error = 1;
+      set_probe_error(event, PROCESS_EVENT_PROBE_ERR_ARGV_STR_READ);
       break;
     }
 
@@ -509,11 +619,19 @@ int handle_execve_exit(struct syscall_exit_execve_args* ctx) {
   event->duration = bpf_ktime_get_ns() - event->timestamp;
 
   struct task_struct* task = (struct task_struct*)bpf_get_current_task();
+  int path_recovered = 0;
+  int cmdline_recovered = 0;
+
+  // If the entry-time filename probe failed, try recovering executable path
+  // from task->mm->exe_file at syscall exit.
+  if (ctx->ret == 0 && event->path[0] == '\0') {
+    path_recovered = fill_path_from_mm_exe_file(event, task);
+  }
 
   // If argv probing failed at sys_enter, recover cmdline from the newly
   // installed mm arg range while still in process context.
   if (ctx->ret == 0 && event->probe_error) {
-    fill_args_from_mm(event, task);
+    cmdline_recovered = fill_args_from_mm(event, task);
   }
 
   // Fallback for processes whose userspace exec args could not be read at
@@ -524,6 +642,31 @@ int handle_execve_exit(struct syscall_exit_execve_args* ctx) {
   // least ["man"] instead of [].
   if (ctx->ret == 0 && event->probe_error && event->args[0] == '\0') {
     bpf_get_current_comm(event->args, TASK_COMM_LEN);
+    if (event->args[0] != '\0') {
+      cmdline_recovered = 1;
+    }
+  }
+
+  // If any cmdline fallback recovered usable data, clear cmdline-related
+  // probe errors.
+  if (ctx->ret == 0 && cmdline_recovered) {
+    event->probe_error_mask &= ~(PROCESS_EVENT_PROBE_ERR_ARGV_PTR_READ |
+                                 PROCESS_EVENT_PROBE_ERR_ARGV_STR_READ |
+                                 PROCESS_EVENT_PROBE_ERR_MM_READ |
+                                 PROCESS_EVENT_PROBE_ERR_MM_ARG_RANGE);
+
+    if (event->probe_error_mask == 0U) {
+      event->probe_error = 0;
+    }
+  }
+
+  // If executable path recovery succeeded, clear path-read probe error.
+  if (ctx->ret == 0 && path_recovered) {
+    event->probe_error_mask &= ~PROCESS_EVENT_PROBE_ERR_PATH_READ;
+
+    if (event->probe_error_mask == 0U) {
+      event->probe_error = 0;
+    }
   }
 
   // Copy the completed event to the ring buffer and submit it.

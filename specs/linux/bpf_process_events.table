@@ -11,6 +11,8 @@ schema([
     Column("cid", BIGINT, "Cgroup ID"),
     Column("exit_code", TEXT, "Exit code of the execve syscall"),
     Column("probe_error", BIGINT, "Set to 1 if there was an error reading information from the probe"),
+    Column("probe_error_mask", BIGINT, "Bitmask of probe read failures"),
+    Column("probe_error_reason", TEXT, "Comma-separated probe read failure reasons"),
     Column("syscall", TEXT, "System call name"),
     Column("path", TEXT, "Binary path"),
     Column("cwd", TEXT, "Current working directory"),

@@ -158,6 +158,7 @@ int BPFProcessEventPublisher::handleEvent(void* ctx,
   event.exit_code = raw_event->exit_code;
   event.duration = raw_event->duration;
   event.probe_error = raw_event->probe_error;
+  event.probe_error_mask = raw_event->probe_error_mask;
 
   event.comm =
       std::string(raw_event->comm, strnlen(raw_event->comm, TASK_COMM_LEN));

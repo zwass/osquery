@@ -16,6 +16,15 @@
 #define MAX_PATH_LEN 256
 #define MAX_ARGS_LEN 512
 
+// Bitmask values stored in process_event::probe_error_mask.
+#define PROCESS_EVENT_PROBE_ERR_CWD_FS 0x00000001U
+#define PROCESS_EVENT_PROBE_ERR_CWD_DENTRY 0x00000002U
+#define PROCESS_EVENT_PROBE_ERR_PATH_READ 0x00000004U
+#define PROCESS_EVENT_PROBE_ERR_ARGV_PTR_READ 0x00000008U
+#define PROCESS_EVENT_PROBE_ERR_ARGV_STR_READ 0x00000010U
+#define PROCESS_EVENT_PROBE_ERR_MM_READ 0x00000020U
+#define PROCESS_EVENT_PROBE_ERR_MM_ARG_RANGE 0x00000040U
+
 // Event structure shared between BPF program and userspace
 struct process_event {
   __u64 timestamp; // BPF timestamp (ktime_get_ns)
@@ -28,6 +37,7 @@ struct process_event {
   __s64 exit_code; // Exit code from execve syscall
   __u64 duration; // Syscall duration in nanoseconds
   __u8 probe_error; // Error flag
+  __u32 probe_error_mask; // Bitmask describing which probe reads failed
 
   char comm[TASK_COMM_LEN]; // Command name (from task_struct)
   char path[MAX_PATH_LEN]; // Binary path
