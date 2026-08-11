@@ -2726,10 +2726,6 @@ function(generateAwsCppSdkCore)
       "${library_root}/source/platform/windows/Time.cpp"
       "${library_root}/source/utils/crypto/bcrypt/CryptoImpl.cpp"
     )
-    set_source_files_properties(
-      "${library_root}/source/utils/crypto/bcrypt/CryptoImpl.cpp"
-        PROPERTIES COMPILE_FLAGS "/Zc:__cplusplus"
-    )
   endif()
 
   target_include_directories(thirdparty_aws-cpp-sdk-core PRIVATE
@@ -2812,6 +2808,7 @@ function(generateAwsCppSdkCore)
       _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
     )
     target_compile_options(thirdparty_aws-cpp-sdk-core PRIVATE
+      /Zc:__cplusplus
       /FIcodecvt
       /FIlocale
     )
