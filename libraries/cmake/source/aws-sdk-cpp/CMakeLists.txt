@@ -1761,6 +1761,12 @@ function(generateAwsCppSdkEc2)
       ENABLE_BCRYPT_ENCRYPTION
     )
 
+    target_compile_options(thirdparty_aws-cpp-sdk-ec2 PRIVATE
+      /Zc:__cplusplus
+      /FIcodecvt
+      /FIlocale
+    )
+
     target_link_libraries(thirdparty_aws-cpp-sdk-ec2 PUBLIC
       Userenv
       version
@@ -1850,6 +1856,12 @@ function(generateAwsCppSdkSts)
     target_compile_definitions(thirdparty_aws-cpp-sdk-sts PRIVATE
       PLATFORM_WINDOWS
       ENABLE_BCRYPT_ENCRYPTION
+    )
+
+    target_compile_options(thirdparty_aws-cpp-sdk-sts PRIVATE
+      /Zc:__cplusplus
+      /FIcodecvt
+      /FIlocale
     )
 
     target_link_libraries(thirdparty_aws-cpp-sdk-sts PUBLIC
@@ -2255,6 +2267,12 @@ function(generateAwsCppSdkS3)
       ENABLE_BCRYPT_ENCRYPTION
     )
 
+    target_compile_options(thirdparty_aws-cpp-sdk-s3 PRIVATE
+      /Zc:__cplusplus
+      /FIcodecvt
+      /FIlocale
+    )
+
     target_link_libraries(thirdparty_aws-cpp-sdk-s3 PUBLIC
       Userenv
       version
@@ -2390,6 +2408,12 @@ function(generateAwsCppSdkKinesis)
     target_compile_definitions(thirdparty_aws-cpp-sdk-kinesis PRIVATE
       PLATFORM_WINDOWS
       ENABLE_BCRYPT_ENCRYPTION
+    )
+
+    target_compile_options(thirdparty_aws-cpp-sdk-kinesis PRIVATE
+      /Zc:__cplusplus
+      /FIcodecvt
+      /FIlocale
     )
 
     target_link_libraries(thirdparty_aws-cpp-sdk-kinesis PUBLIC
@@ -2566,6 +2590,12 @@ function(generateAwsCppSdkFirehose)
     target_compile_definitions(thirdparty_aws-cpp-sdk-firehose PUBLIC
       PLATFORM_WINDOWS
       ENABLE_BCRYPT_ENCRYPTION
+    )
+
+    target_compile_options(thirdparty_aws-cpp-sdk-firehose PRIVATE
+      /Zc:__cplusplus
+      /FIcodecvt
+      /FIlocale
     )
 
     target_link_libraries(thirdparty_aws-cpp-sdk-firehose PUBLIC
