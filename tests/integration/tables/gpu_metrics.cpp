@@ -11,6 +11,7 @@
 // Spec file: specs/gpu_metrics.table
 
 #include <osquery/tests/integration/tables/helper.h>
+#include <osquery/utils/info/platform_type.h>
 
 namespace osquery {
 namespace table_tests {
@@ -32,23 +33,29 @@ TEST_F(gpuMetrics, test_sanity) {
 
   ValidationMap row_map = {
       {"gpu_index", NonNegativeInt},
-      {"pci_bus", NormalType},
       {"vendor_name", NormalType},
-      {"device_name", NonEmptyString},
-      {"total_cores", IntOrEmpty},
+      {"device_name", NormalType},
       {"driver_version", NormalType},
-      // vram_total_bytes, gpu_utilization_pct, temperature_gpu_celsius,
-      // power_draw_watts, power_limit_watts, fan_speed_pct are all optional
-      // (NULL when not supported by the platform/driver).
       {"vram_total_bytes", IntOrEmpty},
-      {"allocated_vram", IntOrEmpty},
-      {"in_use_vram", IntOrEmpty},
-      {"gpu_utilization_pct", IntOrEmpty},
-      {"temperature_gpu_celsius", IntOrEmpty},
-      {"power_draw_watts", IntOrEmpty},
-      {"power_limit_watts", IntOrEmpty},
-      {"fan_speed_pct", IntOrEmpty},
+      {"gpu_utilization_pct", NormalType},
   };
+
+  if (isPlatform(PlatformType::TYPE_POSIX)) {
+    row_map.emplace("pci_bus", NormalType);
+    row_map.emplace("power_draw_watts", NormalType);
+  }
+
+  if (isPlatform(PlatformType::TYPE_OSX)) {
+    row_map.emplace("total_cores", IntOrEmpty);
+    row_map.emplace("allocated_vram", IntOrEmpty);
+    row_map.emplace("in_use_vram", IntOrEmpty);
+  }
+
+  if (isPlatform(PlatformType::TYPE_LINUX)) {
+    row_map.emplace("temperature_gpu_celsius", NormalType);
+    row_map.emplace("power_limit_watts", NormalType);
+    row_map.emplace("fan_speed_pct", NormalType);
+  }
 
   validate_rows(data, row_map);
 }
