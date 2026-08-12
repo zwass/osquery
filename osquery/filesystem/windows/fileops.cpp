@@ -2051,7 +2051,7 @@ Status platformLstat(const std::string& path, struct stat& d_stat) {
 }
 
 boost::optional<bool> platformIsFile(int fd) {
-  struct _stat64 d_stat{};
+  struct _stat64 d_stat {};
   if (::_fstat64(fd, &d_stat) < 0) {
     return boost::none;
   }
