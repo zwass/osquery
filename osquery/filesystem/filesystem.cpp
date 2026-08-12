@@ -118,7 +118,11 @@ Status readFile(const fs::path& path,
                            file_handle.getFilePath().string());
   }
 
-  const std::uint64_t file_size = file_handle.size();
+  const auto file_size_opt = file_handle.size();
+  if (!file_size_opt) {
+    return Status::failure("Cannot determine size of: " + path.string());
+  }
+  const std::uint64_t file_size = *file_size_opt;
 
   // Fail to read if the file is bigger than the configured limit.
   auto status = checkFileReadLimit(file_size, path, shouldLog);
@@ -165,7 +169,11 @@ Status readFile(const fs::path& path, std::string& content, bool shouldLog) {
                            file_handle.getFilePath().string());
   }
 
-  const std::uint64_t file_size = file_handle.size();
+  const auto file_size_opt = file_handle.size();
+  if (!file_size_opt) {
+    return Status::failure("Cannot determine size of: " + path.string());
+  }
+  const std::uint64_t file_size = *file_size_opt;
 
   // Fail to read if the file is bigger than the configured limit
   auto status = checkFileReadLimit(file_size, path, shouldLog);

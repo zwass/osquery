@@ -1264,10 +1264,14 @@ off_t PlatformFile::seek(off_t offset, SeekMode mode) {
   return cursor_;
 }
 
-size_t PlatformFile::size() const {
+boost::optional<size_t> PlatformFile::size() const {
+  // GetFileSizeEx is undefined for non-disk handles (pipes, etc.).
+  if (::GetFileType(handle_) != FILE_TYPE_DISK) {
+    return boost::none;
+  }
   LARGE_INTEGER file_size{};
   if (!::GetFileSizeEx(handle_, &file_size)) {
-    return 0;
+    return boost::none;
   }
   return static_cast<size_t>(file_size.QuadPart);
 }
@@ -2047,7 +2051,7 @@ Status platformLstat(const std::string& path, struct stat& d_stat) {
 }
 
 boost::optional<bool> platformIsFile(int fd) {
-  struct _stat64 d_stat {};
+  struct _stat64 d_stat{};
   if (::_fstat64(fd, &d_stat) < 0) {
     return boost::none;
   }

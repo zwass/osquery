@@ -282,8 +282,8 @@ class PlatformFile : private boost::noncopyable {
   /// Use the platform-specific seek.
   off_t seek(off_t offset, SeekMode mode);
 
-  /// Inspect the file size.
-  size_t size() const;
+  /// Returns the file size, or boost::none if the size cannot be determined.
+  boost::optional<size_t> size() const;
 
  private:
   boost::filesystem::path fname_;
