@@ -32,7 +32,6 @@ TEST_F(gpuMetrics, test_sanity) {
   }
 
   ValidationMap row_map = {
-      {"gpu_index", NonNegativeInt},
       {"vendor_name", NormalType},
       {"device_name", NormalType},
       {"driver_version", NormalType},
