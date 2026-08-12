@@ -2719,6 +2719,13 @@ function(generateAwsCppSdkCore)
       "${library_root}/source/platform/windows/Time.cpp"
       "${library_root}/source/utils/crypto/bcrypt/CryptoImpl.cpp"
     )
+    # CryptoImpl.cpp uses NTSTATUS with operator<< which breaks under C++20; compile it as C++17 without the PCH
+    set_source_files_properties(
+      "${library_root}/source/utils/crypto/bcrypt/CryptoImpl.cpp"
+      PROPERTIES
+        SKIP_PRECOMPILE_HEADERS ON
+        COMPILE_FLAGS "/std:c++17"
+    )
   endif()
 
   target_include_directories(thirdparty_aws-cpp-sdk-core PRIVATE
