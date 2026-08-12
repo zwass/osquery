@@ -1,7 +1,6 @@
 table_name("gpu_metrics")
 description("Information about GPU devices on the system, including inventory and runtime telemetry where supported.")
 schema([
-  Column("gpu_index", INTEGER, "The index of the GPU, starting from 0."),
   Column("vendor_name", TEXT, "The vendor name of the GPU."),
   Column("device_name", TEXT, "The model/device name of the GPU."),
   Column("driver_version", TEXT, "The installed driver version for the GPU.", collate="version"),

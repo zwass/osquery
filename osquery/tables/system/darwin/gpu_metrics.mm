@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: (Apache-2.0 OR GPL-2.0-only)
  */
 
-#import <AppKit/NSDocument.h>
 #import <Foundation/Foundation.h>
 #include <IOKit/IOKitLib.h>
 
@@ -429,7 +428,6 @@ std::vector<AcceleratorStats> collectAcceleratorStats() {
   const auto gpu_power_data = collectGPUPowerData();
 
   io_service_t raw_service = 0;
-  int gpu_index = 0;
   while ((raw_service = IOIteratorNext(it.get())) != 0) {
     UniqueIoService service(raw_service);
     AcceleratorStats stats;
@@ -494,13 +492,12 @@ std::vector<AcceleratorStats> collectAcceleratorStats() {
       }
     }
 
-    // Correlate power data by GPU index
-    if (gpu_index < static_cast<int>(gpu_power_data.size())) {
-      stats.power_draw_watts = gpu_power_data[gpu_index];
-    }
-
     result.push_back(std::move(stats));
-    ++gpu_index;
+  }
+
+  // Power data is a system-wide total; only meaningful when one GPU is present.
+  if (result.size() == 1 && !gpu_power_data.empty()) {
+    result[0].power_draw_watts = gpu_power_data[0];
   }
 
   return result;
@@ -529,7 +526,6 @@ QueryData genGpuMetrics(QueryContext& context) {
     int gpu_index = 0;
     for (NSDictionary* item in items) {
       Row r;
-      r["gpu_index"] = INTEGER(gpu_index);
 
       // Bus type (e.g., "PCIe", "Built-In") — not a slot address on macOS.
       NSString* bus = [item objectForKey:@"spdisplays_bus"];

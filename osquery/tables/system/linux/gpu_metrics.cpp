@@ -208,7 +208,6 @@ QueryData genGpuMetrics(QueryContext& context) {
   struct udev_list_entry *device_entries, *entry;
   device_entries = udev_enumerate_get_list_entry(enumerate.get());
 
-  int gpu_index = 0;
   udev_list_entry_foreach(entry, device_entries) {
     const char* path = udev_list_entry_get_name(entry);
 
@@ -226,7 +225,6 @@ QueryData genGpuMetrics(QueryContext& context) {
     }
 
     Row r;
-    r["gpu_index"] = INTEGER(gpu_index++);
     r["pci_bus"] = UdevEventPublisher::getValue(device.get(), kGpuPCIKeySlot);
 
     // Prefer pci.ids names; fall back to udev database strings.
