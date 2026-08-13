@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: (Apache-2.0 OR GPL-2.0-only)
  */
 
-#include <osquery/filesystem/filesystem.h>
 #include <osquery/filesystem/fileops.h>
+#include <osquery/filesystem/filesystem.h>
 #include <osquery/filesystem/mock_file_structure.h>
 
 #include <boost/filesystem/path.hpp>
