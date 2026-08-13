@@ -55,11 +55,12 @@ void deleteMockFileStructure(const fs::path& path) {
   // On Windows, files with restricted permissions can't be deleted.
   // Recursively fix permissions on all files in the directory.
   boost::system::error_code ec;
-  
+
   if (fs::exists(path, ec)) {
     try {
       for (fs::recursive_directory_iterator it(path);
-           it != fs::recursive_directory_iterator(); ++it) {
+           it != fs::recursive_directory_iterator();
+           ++it) {
         if (fs::is_regular_file(it->path())) {
           // Make all files fully accessible (owner read/write/execute)
           // to ensure they can be deleted
@@ -70,7 +71,7 @@ void deleteMockFileStructure(const fs::path& path) {
       // If permission changes fail, continue with removal attempt
     }
   }
-  
+
   // Remove the directory using error_code version to avoid exceptions
   fs::remove_all(path, ec);
 #else
