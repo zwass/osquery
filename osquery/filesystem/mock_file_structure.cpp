@@ -52,19 +52,30 @@ fs::path createMockFileStructure() {
 
 void deleteMockFileStructure(const fs::path& path) {
 #ifdef WIN32
-  // On Windows, door.txt has restricted permissions (0550),
-  // so we need to make it writable before deletion.
-  const fs::path door_file = path / "door.txt";
-  try {
-    if (fs::exists(door_file)) {
-      // Make file readable and writable using Windows ACL-aware chmod
-      platformChmod(door_file.string(), S_IRUSR | S_IWUSR);
+  // On Windows, files with restricted permissions can't be deleted.
+  // Recursively fix permissions on all files in the directory.
+  boost::system::error_code ec;
+  
+  if (fs::exists(path, ec)) {
+    try {
+      for (fs::recursive_directory_iterator it(path);
+           it != fs::recursive_directory_iterator(); ++it) {
+        if (fs::is_regular_file(it->path())) {
+          // Make all files fully accessible (owner read/write/execute)
+          // to ensure they can be deleted
+          platformChmod(it->path().string(), S_IRWXU);
+        }
+      }
+    } catch (const fs::filesystem_error&) {
+      // If permission changes fail, continue with removal attempt
     }
-  } catch (const fs::filesystem_error&) {
-    // If permission change fails, continue with removal attempt
   }
-#endif
+  
+  // Remove the directory using error_code version to avoid exceptions
+  fs::remove_all(path, ec);
+#else
   fs::remove_all(path);
+#endif
 }
 
 } // namespace osquery
