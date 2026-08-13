@@ -57,7 +57,8 @@ void deleteMockFileStructure(const fs::path& path) {
   try {
     if (fs::exists(door_file)) {
       // Make file writable by setting owner_read and owner_write permissions
-      fs::permissions(door_file, fs::perms::owner_read | fs::perms::owner_write);
+      fs::permissions(door_file,
+                      fs::perms::owner_read | fs::perms::owner_write);
     }
   } catch (const fs::filesystem_error&) {
     // If permission change fails, continue with removal attempt
