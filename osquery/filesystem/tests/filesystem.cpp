@@ -241,6 +241,9 @@ TEST_F(FilesystemTests, test_write_file) {
     // On POSIX systems, root can still read/write.
     EXPECT_FALSE(isWritable(test_file).ok());
     EXPECT_TRUE(isReadable(test_file).ok());
+    if (isPlatform(PlatformType::TYPE_WINDOWS)) {
+      EXPECT_TRUE(platformChmod(test_file.string(), S_IRWXU));
+    }
     ASSERT_TRUE(removePath(test_file).ok());
 
     EXPECT_TRUE(writeTextFile(test_file, content, 0000));
@@ -249,6 +252,9 @@ TEST_F(FilesystemTests, test_write_file) {
     // On POSIX systems, root can still read/write.
     EXPECT_FALSE(isWritable(test_file).ok());
     EXPECT_FALSE(isReadable(test_file).ok());
+    if (isPlatform(PlatformType::TYPE_WINDOWS)) {
+      EXPECT_TRUE(platformChmod(test_file.string(), S_IRWXU));
+    }
     ASSERT_TRUE(removePath(test_file).ok());
   }
 }

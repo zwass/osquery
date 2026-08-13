@@ -81,6 +81,7 @@ class TempFile {
 
   ~TempFile() {
     if (fs::exists(path_)) {
+      platformChmod(path_.c_str(), S_IRWXU);
       fs::remove(path_);
     }
   }
