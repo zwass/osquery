@@ -8,6 +8,7 @@
  */
 
 #include <osquery/filesystem/filesystem.h>
+#include <osquery/filesystem/fileops.h>
 #include <osquery/filesystem/mock_file_structure.h>
 
 #include <boost/filesystem/path.hpp>
@@ -56,9 +57,8 @@ void deleteMockFileStructure(const fs::path& path) {
   const fs::path door_file = path / "door.txt";
   try {
     if (fs::exists(door_file)) {
-      // Make file writable by setting owner_read and owner_write permissions
-      fs::permissions(door_file,
-                      fs::perms::owner_read | fs::perms::owner_write);
+      // Make file readable and writable using Windows ACL-aware chmod
+      platformChmod(door_file.string(), S_IRUSR | S_IWUSR);
     }
   } catch (const fs::filesystem_error&) {
     // If permission change fails, continue with removal attempt
