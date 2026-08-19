@@ -270,7 +270,6 @@ function(generateOsqueryTablesSystemSystemtable)
     osquery_worker_ipc_platformtablecontaineripc
     osquery_utils_json
     thirdparty_boost
-    thirdparty_yaml-cpp
     osquery_rows_processes_header
   )
 
@@ -294,6 +293,7 @@ function(generateOsqueryTablesSystemSystemtable)
       thirdparty_librpm
       thirdparty_dbus
       thirdparty_libcap
+      thirdparty_yaml-cpp
     )
 
     if(OSQUERY_BUILD_DPKG)
