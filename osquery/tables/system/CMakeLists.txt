@@ -79,6 +79,7 @@ function(generateOsqueryTablesSystemSystemtable)
       linux/process_open_pipes.cpp
       linux/processes.cpp
       linux/rpm_packages.cpp
+      linux/snap_packages.cpp
       linux/secureboot.cpp
       linux/secureboot_certificates.cpp
       linux/shadow.cpp
@@ -267,7 +268,9 @@ function(generateOsqueryTablesSystemSystemtable)
     osquery_utils_system_time
     osquery_utils_system_uptime
     osquery_worker_ipc_platformtablecontaineripc
+    osquery_utils_json
     thirdparty_boost
+    thirdparty_yaml-cpp
     osquery_rows_processes_header
   )
 
