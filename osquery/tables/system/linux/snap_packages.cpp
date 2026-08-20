@@ -98,7 +98,7 @@ Row parseSnapYaml(const std::string& content) {
  * @brief Parse /var/lib/snapd/state.json for per-snap state.
  *
  * Returns a map from snap name to SnapStateInfo containing the current
- * revision, tracking channel, snap-id, and confinement flags.
+ * revision, tracking channel, and snap-id flags.
  */
 static std::unordered_map<std::string, SnapStateInfo> parseSnapdState(
     const std::string& json_content) {
@@ -171,7 +171,7 @@ QueryData genSnapPackages(QueryContext& context) {
     return results;
   }
 
-  // Parse state.json for channel, snap-id, and confinement flags.
+  // Parse state.json for channel, revision, and snap-id flags.
   // This file is root-readable only; missing state is handled gracefully.
   std::unordered_map<std::string, SnapStateInfo> snap_states;
   {
@@ -246,22 +246,6 @@ QueryData genSnapPackages(QueryContext& context) {
     } else {
       r["channel"] = "";
       r["snap_id"] = "";
-    }
-
-    // Guarantee every schema column is present.
-    for (const auto* col : {"version",
-                            "summary",
-                            "description",
-                            "type",
-                            "confinement",
-                            "base",
-                            "license",
-                            "title",
-                            "grade",
-                            "architectures"}) {
-      if (r.count(col) == 0) {
-        r[col] = "";
-      }
     }
 
     results.push_back(std::move(r));
