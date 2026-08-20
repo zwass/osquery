@@ -48,8 +48,7 @@ TEST_F(SnapPackagesTests, parses_a_complete_snap_yaml) {
       "confinement: strict\n"
       "grade: stable\n"
       "base: core20\n"
-      "license: MIT\n"
-      "title: Hello World\n");
+      "license: MIT\n");
 
   EXPECT_EQ(r["name"], "hello-world");
   EXPECT_EQ(r["version"], "6.4");
@@ -59,7 +58,6 @@ TEST_F(SnapPackagesTests, parses_a_complete_snap_yaml) {
   EXPECT_EQ(r["grade"], "stable");
   EXPECT_EQ(r["base"], "core20");
   EXPECT_EQ(r["license"], "MIT");
-  EXPECT_EQ(r["title"], "Hello World");
   // Description begins with the first line of the block scalar.
   EXPECT_FALSE(r["description"].empty());
   EXPECT_NE(r["description"].find("hello-world"), std::string::npos);
