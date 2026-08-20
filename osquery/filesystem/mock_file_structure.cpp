@@ -22,7 +22,7 @@ namespace fs = boost::filesystem;
 fs::path createMockFileStructure() {
   const auto root_dir =
       fs::temp_directory_path() / fs::unique_path("osquery.tests.%%%%.%%%%");
-  fs::create_directories(root_dir / kTopLevelMockFolderName / "/");
+  fs::create_directories(root_dir / kTopLevelMockFolderName);
   fs::create_directories(root_dir / kTopLevelMockFolderName / "secondlevel1");
   fs::create_directories(root_dir / kTopLevelMockFolderName / "secondlevel2");
   fs::create_directories(root_dir / kTopLevelMockFolderName / "secondlevel3");

@@ -53,9 +53,6 @@ function(main)
     endif()
   endif()
 
-  # Set the minimum macOS deployment target to 13.3
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "Minimum macOS deployment version")
-
   add_subdirectory("libraries")
   importLibraries()
 

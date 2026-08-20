@@ -11,9 +11,7 @@
 #include <csignal>
 #include <ctime>
 
-#include <algorithm>
-#include <boost/algorithm/string/find.hpp>
-#include <thread>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <osquery/config/tests/test_utils.h>
 #include <osquery/core/core.h>
@@ -71,7 +69,7 @@ Status TLSServerRunner::startAndSetScript(const std::string& port,
   const std::string cmd = osquery::join(args, " ");
   server_ = PlatformProcess::launchTestPythonScript(cmd);
   if (server_ == nullptr) {
-    return Status::failure("Cannot create test python script");
+    return Status::failure("Cannot create test python script: " + cmd);
   }
   return Status::success();
 }
@@ -99,8 +97,8 @@ Status TLSServerRunner::getListeningPortPid(const std::string& port,
 namespace {
 bool isTimeoutError(const Status& status) {
   const std::string& error_message = status.getMessage();
-  return boost::ifind_first(error_message, "timed out") ||
-         boost::ifind_first(error_message, "timeout");
+  return boost::icontains(error_message, "timed out") ||
+         boost::icontains(error_message, "timeout");
 }
 } // namespace
 

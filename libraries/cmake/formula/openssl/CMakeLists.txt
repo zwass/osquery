@@ -140,7 +140,6 @@ function(opensslMain)
     find_package(Perl REQUIRED)
 
     set(openssl_windows_extra_cflags "")
-    set(openssl_windows_env_cflags "/Od /Ob0")
 
     if("${TARGET_PROCESSOR}" STREQUAL "aarch64")
       set(OPENSSL_ARCH VC-WIN64-ARM)
