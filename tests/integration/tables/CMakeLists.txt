@@ -36,6 +36,7 @@ function(generateTestsIntegrationTablesTestsTest)
     carves.cpp
     certificates.cpp
     chrome_extensions.cpp
+    chrome_search_engines.cpp
     curl.cpp
     curl_certificate.cpp
     etc_hosts.cpp
@@ -172,6 +173,7 @@ function(generateTestsIntegrationTablesTestsTest)
       memory_info.cpp
       memory_map.cpp
       msr.cpp
+      pacman_packages.cpp
       portage_keywords.cpp
       portage_packages.cpp
       portage_use.cpp

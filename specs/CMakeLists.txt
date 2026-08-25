@@ -37,6 +37,7 @@ function(generateNativeTables)
     carves.table
     certificates.table
     chrome_extensions.table
+    chrome_search_engines.table
     chrome_extension_content_scripts.table
     curl.table
     curl_certificate.table
@@ -181,6 +182,7 @@ function(generateNativeTables)
     "linux/md_drives.table:linux"
     "linux/md_personalities.table:linux"
     "linux/msr.table:linux"
+    "linux/pacman_packages.table:linux"
     "linux/portage_keywords.table:linux"
     "linux/portage_packages.table:linux"
     "linux/portage_use.table:linux"
