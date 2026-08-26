@@ -48,7 +48,7 @@ cmake --build . -j10 # where 10 is the number of parallel build jobs
 
 ## macOS
 
-The current build of osquery supports deployment to the same set of macOS versions (macOS 13.13 and newer). _Building_
+The current build of osquery supports deployment to the same set of macOS versions (macOS 13.3 and newer). _Building_
 osquery from source on macOS requires Xcode 26 or newer.
 
 The initial directory is assumed to be `/Users/<user>`
@@ -134,7 +134,7 @@ After changing that key, reboot your build machine and re-attempt the build.
 Note: It may be easier to install these prerequisites using [Chocolatey](https://chocolatey.org/).
 
 - [CMake](https://cmake.org/download/) (>= 4.0.3): The MSI installer is recommended. During installation, select the option to add it to the system `PATH` for all users. If there is any older version of CMake installed (eg. using Chocolatey), uninstall that version first! Do not install CMake using the Visual Studio Installer.
-- [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=17): In the installer choose the "Desktop development with C++" workload, then on the right, under "Optional", select "MSVC v143 - VS 2022 C++" (both x64 and ARM64 variants), "Windows 11 SDK", "C++ ATL" (both x64 and ARM64 variants), and "C++ Clang tools for Windows".
+- [Visual Studio 2026 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=26): In the installer choose the "Desktop development with C++" workload, then on the right, under "Optional", select "MSVC v143 - VS 2026 C++" (both x64 and ARM64 variants), "Windows 11 SDK", "C++ ATL" (both x64 and ARM64 variants), and "C++ Clang tools for Windows".
 - [Git for Windows](https://github.com/git-for-windows/git/releases/latest): Select "checkout as-is, commit as-is". Later check "Enable symbolic links" support.
 - [Python 3](https://www.python.org/downloads/windows/), specifically the 64-bit version.
 - [Strawberry Perl](https://strawberryperl.com/) for the OpenSSL formula. It is recommended to install it to the default destination path.
