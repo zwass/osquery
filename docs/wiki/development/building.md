@@ -4,11 +4,11 @@ osquery supports many flavors of Linux, macOS, and Windows.
 
 While osquery runs on a large number of operating systems, we only provide build instructions for a select few.
 
-The supported compilers are: the osquery toolchain (LLVM/Clang 9.0.1) on Linux, MSVC v142 on Windows, and AppleClang from Xcode Command Line Tools 16.x+.
+The supported compilers are: the osquery toolchain (LLVM/Clang 18.1.8) on Linux, MSVC v143 on Windows, and Apple clang from Xcode Command Line Tools 26.x+.
 
 ## Prerequisites
 
-Git (>= 2.14.0), CMake (>= 3.21.4), Python 3 are required to build. The rest of the dependencies are downloaded by CMake.
+Git (>= 2.14.0), CMake (>= 4.0.3), Python 3 are required to build. Additional dependencies are required on each platform, as documented below.
 
 The default build type is `RelWithDebInfo` (optimizations active + debug symbols) and can be changed in the CMake configure phase by setting the `CMAKE_BUILD_TYPE` flag to `Release` or `Debug`.
 
@@ -48,14 +48,14 @@ cmake --build . -j10 # where 10 is the number of parallel build jobs
 
 ## macOS
 
-The current build of osquery supports deployment to the same set of macOS versions (macOS 10.15 and newer). _Building_
-osquery from source on macOS requires Xcode 16 or newer.
+The current build of osquery supports deployment to the same set of macOS versions (macOS 13.13 and newer). _Building_
+osquery from source on macOS requires Xcode 26 or newer.
 
 The initial directory is assumed to be `/Users/<user>`
 
 ### Step 1: Install macOS prerequisites
 
-Please ensure [Homebrew](https://brew.sh/) has been installed, and install a _full copy_ of Xcode 16 or newer (not just the Xcode command-line tools, although you need to install those too — launch Xcode after installing or upgrading, and complete its installation of the "additional components" when prompted).
+Please ensure [Homebrew](https://brew.sh/) has been installed, and install a _full copy_ of Xcode 26 or newer (not just the Xcode command-line tools, although you need to install those too — launch Xcode after installing or upgrading, and complete its installation of the "additional components" when prompted).
 
 Then do the following.
 
@@ -164,7 +164,7 @@ cd osquery
 
 # Configure
 mkdir build; cd build
-cmake -G "Visual Studio 17 2022" -A x64 .. # or -A arm64
+cmake -G "Visual Studio 18 2026" -A x64 .. # or -A arm64
 
 # Build
 cmake --build . --config RelWithDebInfo -j10 # Number of projects to build in parallel
