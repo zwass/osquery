@@ -19,6 +19,18 @@
 
 #include <utility>
 
+#if defined(_WIN32) && defined(_MSC_VER)
+#include <cstddef>
+
+namespace osquery_stdext_compat {
+template <typename OutputIterator>
+constexpr OutputIterator checked_array_iterator(OutputIterator output_iterator,
+                                                std::size_t) noexcept {
+  return output_iterator;
+}
+} // namespace osquery_stdext_compat
+#endif
+
 #include <aws/core/AmazonSerializableWebServiceRequest.h>
 #include <aws/core/AmazonWebServiceRequest.h>
 #include <aws/core/AmazonWebServiceResult.h>
