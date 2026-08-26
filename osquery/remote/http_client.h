@@ -38,6 +38,9 @@
 #include <boost/beast/http.hpp>
 #include <boost/optional/optional.hpp>
 
+#include <cstdint>
+#include <utility>
+
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 
@@ -323,7 +326,43 @@ class Client {
    *
    * This function sets ec_ in case of boost io service returns with an error.
    */
-  void callNetworkOperation(std::function<void()> callback);
+  void callNetworkOperation(std::function<void(std::uint64_t)> callback);
+
+  /// Increment and return the active network operation generation.
+  std::uint64_t beginNetworkOperation();
+
+  /// Returns true when the callback generation matches the active operation.
+  bool isCurrentOperation(std::uint64_t generation) const;
+
+  static boost::asio::ip::tcp::endpoint endpointFromConnectResult(
+      boost::asio::ip::tcp::endpoint const& endpoint) {
+    return endpoint;
+  }
+
+  static boost::asio::ip::tcp::endpoint endpointFromConnectResult(
+      boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp> const&
+          entry) {
+    return entry.endpoint();
+  }
+
+  static boost::asio::ip::tcp::endpoint endpointFromConnectResult(
+      boost::asio::ip::basic_resolver_iterator<boost::asio::ip::tcp> const&
+          endpoint_it) {
+    return endpointFromConnectResult(*endpoint_it);
+  }
+
+  template <typename Handler>
+  auto makeGenerationGuardedHandler(std::uint64_t generation,
+                                    Handler&& handler) {
+    return [this, generation, handler = std::forward<Handler>(handler)](
+               auto&&... args) mutable {
+      if (!isCurrentOperation(generation)) {
+        return;
+      }
+
+      handler(std::forward<decltype(args)>(args)...);
+    };
+  }
 
   /**
    * @brief Used in callbacks to cancel timers and set ec_.
@@ -349,6 +388,7 @@ class Client {
   boost::system::error_code ec_;
   bool network_operation_completed_{false};
   bool new_client_options_{true};
+  std::uint64_t operation_generation_{0U};
 };
 
 /**
