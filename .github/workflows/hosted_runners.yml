@@ -1103,6 +1103,27 @@ jobs:
 
         echo "${{ steps.build_paths.outputs.INSTALL }}\ninja" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+    - name: Locate Visual C++ toolchain
+      id: vc_toolchain
+      shell: powershell
+      run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        if (-not (Test-Path $vswhere)) {
+          throw "vswhere.exe was not found at: $vswhere"
+        }
+
+        $installation_path = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if ([string]::IsNullOrWhiteSpace($installation_path)) {
+          throw "Failed to locate a Visual Studio installation with VC tools"
+        }
+
+        $vcvarsall_path = Join-Path $installation_path "VC\Auxiliary\Build\vcvarsall.bat"
+        if (-not (Test-Path $vcvarsall_path)) {
+          throw "vcvarsall.bat was not found at: $vcvarsall_path"
+        }
+
+        echo "VCVARSALL_BAT=$vcvarsall_path" >> $env:GITHUB_OUTPUT
+
     - name: Configure the project
       shell: cmd
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -1112,7 +1133,7 @@ jobs:
         SCCACHE_CACHE_SIZE: "5G"
 
       run: |
-        call "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ steps.vc_arch.outputs.VC_ARCH }}
+        call "${{ steps.vc_toolchain.outputs.VCVARSALL_BAT }}" ${{ steps.vc_arch.outputs.VC_ARCH }}
         @echo on
 
         set cross_compilation=
@@ -1149,7 +1170,7 @@ jobs:
         SCCACHE_CACHE_SIZE: "5G"
 
       run: |
-        call "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ steps.vc_arch.outputs.VC_ARCH }}
+        call "${{ steps.vc_toolchain.outputs.VCVARSALL_BAT }}" ${{ steps.vc_arch.outputs.VC_ARCH }}
         @echo on
 
         sccache.exe --zero-stats
@@ -1174,7 +1195,7 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       shell: cmd
       run: |
-        call "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ steps.vc_arch.outputs.VC_ARCH }}
+        call "${{ steps.vc_toolchain.outputs.VCVARSALL_BAT }}" ${{ steps.vc_arch.outputs.VC_ARCH }}
         @echo on
         ctest --build-nocmake -C Release -V
 
@@ -1192,7 +1213,7 @@ jobs:
       shell: cmd
 
       run: |
-        call "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ steps.vc_arch.outputs.VC_ARCH }}
+        call "${{ steps.vc_toolchain.outputs.VCVARSALL_BAT }}" ${{ steps.vc_arch.outputs.VC_ARCH }}
         @echo on
 
         7z ^
