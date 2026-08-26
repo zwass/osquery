@@ -2808,7 +2808,7 @@ function(generateAwsCppSdkCore)
       _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
     )
     target_compile_options(thirdparty_aws-cpp-sdk-core PUBLIC
-      /FI"${CMAKE_CURRENT_SOURCE_DIR}/osquery_aws_compat.h"
+      /FI${CMAKE_CURRENT_SOURCE_DIR}/osquery_aws_compat.h
     )
     target_compile_options(thirdparty_aws-cpp-sdk-core PRIVATE
       /FIcodecvt
