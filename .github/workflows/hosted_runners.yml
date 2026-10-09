@@ -429,12 +429,12 @@ jobs:
       run: |
         # Allow access to the docker socket
         sudo chmod 666 /var/run/docker.sock
-        ctest --build-nocmake -LE "root-required" -V
+        ctest --build-nocmake -j ${{ steps.build_job_count.outputs.VALUE }} -LE "root-required" -V
 
     - name: Run the tests as root user
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       if: matrix.build_type != 'RelWithDebInfo'
-      run: sudo -u root ctest --build-nocmake -L "root-required" -V
+      run: sudo -u root ctest --build-nocmake -j ${{ steps.build_job_count.outputs.VALUE }} -L "root-required" -V
 
     - name: Run the install target
       if: matrix.build_type == 'RelWithDebInfo'
@@ -818,6 +818,11 @@ jobs:
         build_type: [Release, Debug]
 
     steps:
+    - name: Select the test job count
+      shell: bash
+      id: test_job_count
+      run: echo "VALUE=$(sysctl -n hw.logicalcpu)" >> $GITHUB_OUTPUT
+
     - name: Setup the build paths
       shell: bash
       id: build_paths
@@ -913,10 +918,10 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ matrix.architecture }}" == "x86_64" ]]; then
-          ctest --build-nocmake -V \
+          ctest --build-nocmake -j "${{ steps.test_job_count.outputs.VALUE }}" -V \
             -R '^(tools_tests_testosqueryd|tools_tests_testosqueryi)$'
         else
-          ctest --build-nocmake -V
+          ctest --build-nocmake -j "${{ steps.test_job_count.outputs.VALUE }}" -V
         fi
 
   # This job builds the universal macOS artifacts
@@ -1256,7 +1261,7 @@ jobs:
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ steps.vc_arch.outputs.VC_ARCH }}
         @echo on
-        ctest --build-nocmake -C Release -V
+        ctest --build-nocmake -C Release -j ${{ steps.build_job_count.outputs.VALUE }} -V
 
     - name: Run the install target
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
